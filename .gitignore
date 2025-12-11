@@ -22,7 +22,7 @@ build/
 out/
 
 # Frontend specific cache and build artifacts
-frontend/node_modules/.cache/
+frontend/node_modules/
 frontend/.cache/
 frontend/build/
 
@@ -53,4 +53,10 @@ cypress/videos/
 *.lock
 *.pid
 
+#unwanted
 backend.zip
+SESSION_AND_USERNAME_FIX.md
+QUICKSTART.md
+FACILITY_SETUP.md
+DASHBOARD_UPDATE.md
+*.env.example
