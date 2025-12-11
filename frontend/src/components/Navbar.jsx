@@ -65,7 +65,7 @@ const Navbar = () => {
     <nav className={`fixed w-full bg-gray-800 shadow-lg p-4 transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold text-white">Trash to Tech</h1>
+          <h1 className="text-2xl font-bold text-white">TrashToTech</h1>
           <p className="text-sm text-gray-300 italic ml-2 mt-4">Recycle, Reward, Repeat</p>
         </div>
         <div className="flex space-x-6 items-center">

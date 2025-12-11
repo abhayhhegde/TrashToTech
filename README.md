@@ -1,4 +1,4 @@
-# Trash to Tech - E-Waste Recycling Platform
+# TrashToTech - E-Waste Recycling Platform
 
 A comprehensive web application for managing electronic waste recycling, connecting users with authorized e-waste facilities, and tracking environmental impact.
 
@@ -44,7 +44,7 @@ A comprehensive web application for managing electronic waste recycling, connect
 ## Project Structure
 
 ```
-Trash to Tech/
+TrashToTech/
 ├── backend/
 │   ├── models/
 │   │   ├── User.js          # User schema with points, level, history
