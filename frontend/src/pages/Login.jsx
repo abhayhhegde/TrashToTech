@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import API from '../api/http';
 
-const API_BASE_URL = 'http://192.168.6.134:5000'; // Base URL of the backend API
+const API_BASE_URL = 'http://localhost:5000'; // Base URL of the backend API
 
 const Login = () => {
   const [email, setEmail] = useState(''); // Use email instead of username
@@ -13,16 +14,13 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
-        email,
-        password,
-      });
+      const response = await API.post('/login', { email, password });
   
       if (response.status === 200) {
-        const { token, email } = response.data;  // Assume backend returns email and token
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('email', email);  // Store email in localStorage
-  
+        const { token } = response.data;
+        // Use sessionStorage instead of localStorage - expires when browser closes
+        sessionStorage.setItem('authToken', token);
+
         // Redirect to the dashboard
         navigate('/dashboard');
       }

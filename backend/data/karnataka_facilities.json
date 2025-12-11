@@ -1,0 +1,362 @@
+[
+  {
+    "name": "M/s. Sriram Eco Raksha Computer Services Pvt. Ltd.",
+    "address": "Shed No:B-29, KSSIDC Industrial Estate, Bommasandra,Industrial Area, Bommasandra,Karnataka 560099",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. E-Friendly Waste Recyclers",
+    "address": "17, 1st, 1st Cross Azeez Sait Industrial Town, Nayandahalli, Bengaluru, Karnataka 560039",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Eco Globe E-Waste Recyclers",
+    "address": "Eco Globe E-Waste Recyclers, Opp Toyota Warehouse., Plot No 87, 2nd Phase, 2nd Sector, Ramanagar, Bengaluru, Bidadi Industrial Area-562109",
+    "capacity": 1200
+  },
+  {
+    "name": "M/s. E-Hasiru",
+    "address": "No. 168/B, 1st Floor, 7th Main Road, 3rd Phase, Peenya Industrial Area, Bangalore",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Green Enabled IT Solutions Pvt. Ltd.",
+    "address": "No. 2/1, 27th Cross, Behind Krishna Grand Hotel, Banashankari 2nd Stage, Bengaluru",
+    "capacity": 600
+  },
+  {
+    "name": "M/s. Coral Waters",
+    "address": "No. 8E, KIADB Industrial Area, Hoskote Taluk, Bangalore Rural District",
+    "capacity": 720
+  },
+  {
+    "name": "M/s. Royal Touch",
+    "address": "No. 3/2, 2nd Cross, Ezakiel Industrial Estate, K. G Halli, Nagawara Main Road, Bangalore",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Pharmateck Consultancy",
+    "address": "Sy. No. 40/1, Mangammanapalya, Bommanahalli",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Cerebra Integrated Technologies Ltd.",
+    "address": "Plot No. 41 to 46, Appasandra village, KIADB Indl. Area, Narasapura Hobli, Kolar Taluk and District",
+    "capacity": 39000
+  },
+  {
+    "name": "M/s. AGK Enterprises, Unit-I",
+    "address": "No 33/A, Industrial 'A' Layout, Bannimantap, Mysore - 570015",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Aptus Recycling Pvt. Ltd.",
+    "address": "Sy No. 241/4B, Magnur Village, Kirgavalu Hobli, Malavalli Taluk Mandya District- 571430",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. E-Parisara Pvt. Ltd.",
+    "address": "No. 30-P3, Dabaspet Bangalore",
+    "capacity": 9288
+  },
+  {
+    "name": "M/s. Tech Logic, Unit-2",
+    "address": "Shed No. 36, 2nd Main, Ranganathapura, Bangalore - 560 044",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. E-Scrapy Recyclers",
+    "address": "No.106, Andrahalli Main Road, Byreshwara Industrial Area, Peenya 2nd stage, Bangalore - 560 058",
+    "capacity": 720
+  },
+  {
+    "name": "M/s. KH E-Waste Recyclers",
+    "address": "No. 104, 1st Main Road, 4th Cross, Azeez Sait Industrial Area, Nayandahalli, Bangalore – 39",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. RPN Industries",
+    "address": "Plot No B2, KSSIDC Industrial Area, Kumbalgodu, Mysore Road, Bangalore",
+    "capacity": 312
+  },
+  {
+    "name": "M/s. I Seven",
+    "address": "# 9/4, Kachohalli Industrial Estate Kachohalli, Near Saibaba Temple, Laxmipura Post, Bengaluru- 562123",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Greenscape Eco Management Pvt. Ltd.",
+    "address": "Plot No. R-12, Veerasandra Indl Area, Anekal Tq, Bangalore Urban District",
+    "capacity": 600
+  },
+  {
+    "name": "M/s. Trishyirya Recycling India Pvt. Ltd.",
+    "address": "No. 315, 4th Phase, Peenya Industrial Estate, Bangalore - 560 058",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. E Pragathi Recycling",
+    "address": "Plot No. 66, Road No. 18, Anthaasanahalli Indl. Area, IInd Phase, Tumkur",
+    "capacity": 3600
+  },
+  {
+    "name": "M/s. Ingram Micro India Pvt. Ltd.",
+    "address": "I Floor, Plot No. 1-4, Sy No. 5/2, 15th Km, Singasandra Post, Baretena Agrahara, NH-7, Hosur Main Road, Bangalore- 560100",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Vans Chemistry",
+    "address": "Plot No. 94/5, Shed NO. 13R14, SRRLayout, Kannalli Village, Bangalore- 560094",
+    "capacity": 1440
+  },
+  {
+    "name": "M/s. Moogambigai Metal Refineries, Unit (3)",
+    "address": "Plot No. 174, Industrial Area, Baikampady Mangalore- 575011",
+    "capacity": 1248
+  },
+  {
+    "name": "M/s. Sogo Synergy Private Limited",
+    "address": "Shed No. A57, KSSIDC Industrial Estate, Bommasandra, Hosur Road, Anekal Taluk, Bangalore Urban District – 560099",
+    "capacity": 1296
+  },
+  {
+    "name": "M/s. MKK E-Waste Enterprises",
+    "address": "Shed No. 292, Belur Industrial Area, Belur, Dharwad Dist- 580011",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. BSMR Metals",
+    "address": "No. R. O 7, KSSIDC Industrial Estate, Veerasandra II stage, Attibele Hobli, Bangalore Urban District",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Mak Technology Industrial",
+    "address": "Shed No. SP-5, Veerasandra KSSIDC Industrial Estate, Electronic City Post, Bengaluru",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Earth Sense Recycle Pvt. Ltd.",
+    "address": "Printech Park Cluster 1st Phase, Plot No. A17, Kanakapura Taluk, KIADB Industrial Area Harohally Village Han, Harohalli, Ramanagara, Bangalore- 562112",
+    "capacity": 1200
+  },
+  {
+    "name": "M/s. 4R Recycling Pvt Ltd",
+    "address": "Shed No A-5, Industrial Estate, Peenya 3rd Stage Industrial area, Nallakadirenahalli Village, Yeshwanthpur Hobli, Bangalore North Taluk, Bangalore.",
+    "capacity": 900
+  },
+  {
+    "name": "M/s. Prakruthi Recycling Pvt. Ltd.",
+    "address": "Sy No. 22, Flat No. 103, 5th Block, 5th Cross, SSI Area, Rajajinagar, Bangalore- 560010",
+    "capacity": 999.6
+  },
+  {
+    "name": "M/s. Elxion Pvt. Ltd.",
+    "address": "P. No. 24, 23rd A. Main Road, J.P Nagar 2nd Phase Indl Bangalore-560078",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. K. G. Nandini Enterprises",
+    "address": "No. 46/4, 46/5, Billakempanahalli Village, Bidadi Hobli, Ramanagaram District.",
+    "capacity": 7200
+  },
+  {
+    "name": "M/s. Eco Bird Recycling Company Pvt. Ltd.",
+    "address": "No. 185, Azeez Sait industrial Area, Nayandahalli, Mysore Road, Bangalore -39",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Afeefa Spectro Alloys",
+    "address": "Sy No. 289/1, Nagaragere village, Gauribidnur Tq.",
+    "capacity": 290
+  },
+  {
+    "name": "M/s. Rashi E-Waste Solutions Pvt. Ltd.",
+    "address": "SW-51, Shed No. 26, Phase II, Apparel Park, Doddaballapura, Bangalore Rural District",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Coral Communication and Networks Pvt. Ltd.",
+    "address": "No. 52, Hoskote Industrial area, Bangalore Rural District",
+    "capacity": 8916
+  },
+  {
+    "name": "M/s. Ash Recyclers",
+    "address": "No. 3, KSSIDC Ind Estate, Hoskote, Bangalore Rural District",
+    "capacity": 120
+  },
+  {
+    "name": "M/s. E Pragathi Recycling (Tumkur)",
+    "address": "Plot No. 66, Road No. 18, Antharasanahalli Indl Area, IInd Phase, Tumkur",
+    "capacity": 3600
+  },
+  {
+    "name": "M/s. Sheltron Digital systems Pvt.Ltd",
+    "address": "No.27, Maney estate, Sy.no.121, Kumbalgodu, Bengaluru-560074",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Tes-Amm, India pvt. Ltd.",
+    "address": "Sy. No. 118, Site. No. 8, Mookambika Temple Road, Machodalli Forest Gate, Magadi Road, Bangalore",
+    "capacity": 3240
+  },
+  {
+    "name": "M/s. Sonal Metacop",
+    "address": "No.5, Sy No.5/1, Kachohalli Industrial Estate, Kachohalli, Laxmipura Post, Bangalore-562123",
+    "capacity": 720
+  },
+  {
+    "name": "M/s. E-Ward & Co.",
+    "address": "No.11, Mutthachari Industrial area, Nayandahalli, Mysore road, Bangalore-560039",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Swadesh Recyclers LLP",
+    "address": "Sy. No. 216, KIADB Industrial Area, Koorandahalli Village, Malur Taluk Kolar District",
+    "capacity": 7800
+  },
+  {
+    "name": "M/s. FR E-Waste Enterprises",
+    "address": "Shed No. 120, Katha No. 120/B, 52120/C, 5th Cross, Azeez Sait Industrial Area, Nayandahalli, Ward No 131, BBMP RR Nagar Zone, Bengaluru — 560039",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Amara metals enterprises",
+    "address": "No V20/1, 4th main, 2nd stage, Peenya Industrial Area, Bengaluru -560058",
+    "capacity": 1080
+  },
+  {
+    "name": "M/s. Sri sai company",
+    "address": "# R-15, Katha No.320/322/29, Chikkanagamangala, Sarjapura Hobli, Anekal Taluk, Bengaluru",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Global E-waste Management Services",
+    "address": "P21, Hebbal Industrial area, Hebbal I Phase, Mysuru",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Echakra Innovations Pvt Ltd",
+    "address": "SB/47, 1st Cross, Peenya Ind Estate-Stage-1, Bengaluru",
+    "capacity": 318
+  },
+  {
+    "name": "M/s. HMG Eco care Recycling",
+    "address": "C-22 3rd cross, Kumbalagodu, Bangalore-560074",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Npewaste Private limited",
+    "address": "Plot No. 96, Koorgalli Industrial Area, Belavadi Post, Mysuru -570018",
+    "capacity": 1200
+  },
+  {
+    "name": "M/s. Earth Care E-waste Private Limited.",
+    "address": "Plot No.15, KIADB Industrial Area, 155, Kumbalgodu, Kengeri Hobli, Bengaluru South Taluk, Bengaluru",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. E-Plant Recycling",
+    "address": "Plot No. 242/A, 2nd Phase, Narasapura Industrial Area, Kolar Tq & District",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Greens Recology",
+    "address": "Plot No. 415, KIADB, Vasanthanarapura Industrial Area, Tumakuru Taluk and District",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. India Best Way Recycling",
+    "address": "Shed No. 08 (Mane Industrial Estate), Sy. No. 155, Kumbalgodu Village, Kengeri Hobli, Bengaluru South Taluk, Bengaluru Urban District —560074",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Eco Trend recyclers",
+    "address": "#81 A & 82A Kachohalli Industrial Estate, Dasanpura Hobli, Bengaluru",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. Extract",
+    "address": "Plot No. 14/A, KIADB, Attibele Indl. Area, Anekal Taluk, Bengaluru",
+    "capacity": 650.04
+  },
+  {
+    "name": "M/s. Gopalan reprocessors India Pvt Ltd",
+    "address": "No.131, A Main Road, Industrial Suburb, Peenya II Stage, Bengaluru",
+    "capacity": 600
+  },
+  {
+    "name": "M/s. IKON Recyclers",
+    "address": "Plot No.5, Ground & 2nd Floor, 2nd Cross, 2nd Main Road, Magadi Road, Bengaluru -560079",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. E-Scrappy Recyclers (Adrahalli)",
+    "address": "No. 106, Adrahalli main road, Byreshwara industrial Estate, Peenya 2nd stage, Bengaluru -560091",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Global Tech Recyclers",
+    "address": "No-8/5, 2nd Building, 1st Cross, 1st Cross, Kachohalli Village & Kachohalli Industrial Estate, Lakshmipura Post, Dasanapura",
+    "capacity": 300
+  },
+  {
+    "name": "M/s. GRKMS Private Limited",
+    "address": "1st Stage, Sompura, Bharathipura Dabaspet, Bengaluru",
+    "capacity": 4099.92
+  },
+  {
+    "name": "M/s. Communication Test Design, India Private Limited",
+    "address": "Plot No 48, Near Balaji Temple, Peenya II Phase, Bengaluru -560058",
+    "capacity": 1008
+  },
+  {
+    "name": "M/s. JSA Web solutions",
+    "address": "Plot No. 93 A-4, Phase II, Jigani Industrial Area, Jigani Hobli, Anekal Taluk Bengaluru",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Recycler India MGT LLP",
+    "address": "Plot No.679 to 689, KIADB industrial area , Harohalli 3rd phase Kanakapura Taluk, Ramanagara District",
+    "capacity": 5071.92
+  },
+  {
+    "name": "M/s. Trishyiraya Recycling India pvt Ltd (Bashettihalli)",
+    "address": "SW51, Apparel park, indl area, Bashettihalli & part of Arehalli, Shed no.10, Doddballapura, Bengaluru-561203",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Envirotech IT Solutions",
+    "address": "No.136, 1st Floor, Shiva Farm, Magadi Main Road, Vrushabhavathinagar, Bengaluru -560079",
+    "capacity": 312
+  },
+  {
+    "name": "M/s. Ace Recyclers",
+    "address": "Plot No. C29, KSSIDC, Industrial Estate, Hoskote Taluk, Bengaluru - 562114",
+    "capacity": 312
+  },
+  {
+    "name": "M/s. E-Pragathi Recycling Pvt. Ltd. (Yelladadlu)",
+    "address": "Plot No. 564, Sy.No.55 & 52, Yelladadlu Village, Vasanthanarsapura, Industrial Area, 2nd Stage, Kara, Hobli, Tumkur -572128",
+    "capacity": 3240
+  },
+  {
+    "name": "M/s. Best E-waste Recyclers Pvt Ltd.",
+    "address": "Plot No.459, Vasantha Narasapura Indl Area, 2nd Phase, Tumkur- 572138",
+    "capacity": 600
+  },
+  {
+    "name": "M/s. E2E Recycling Business Pvt Ltd",
+    "address": "No.550, Sy No.102(p) Beeragondanahalli Village, SIA 2nd stage, Nelamangala, Bengaluru",
+    "capacity": 432
+  },
+  {
+    "name": "M/s. Return lab Recyclers pvt ltd.",
+    "address": "P.no.68, SW51, Phase-2, Doddabalapura Apparel park, Bengaluru-561203",
+    "capacity": 360
+  },
+  {
+    "name": "M/s. Think Recycling Pvt Ltd",
+    "address": "Plot No b-77 KSSIDC industrial area, Bommasandra, Bengaluru 560099",
+    "capacity": 600
+  }
+]
