@@ -1,4 +1,4 @@
-# TrashToTech - E-Waste Recycling Platform
+# TrashToTech - E-Waste Monitoring Platform
 
 A comprehensive web application for managing electronic waste recycling, connecting users with authorized e-waste facilities, and tracking environmental impact.
 

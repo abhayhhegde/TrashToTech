@@ -1,5 +1,5 @@
 // src/pages/FacilityConfirm.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef,useEffect } from 'react';
 import API from '../api/http';
 import { useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -16,7 +16,7 @@ const FacilityConfirm = () => {
   const navigate = useNavigate();
 
   // Check if facility is logged in
-  React.useEffect(() => {
+  useEffect(() => {
     const facilityToken = sessionStorage.getItem('facilityToken');
     if (!facilityToken) {
       navigate('/facility/login');
