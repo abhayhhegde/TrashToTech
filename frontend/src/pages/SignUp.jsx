@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom'; // Import Link here
 
-const API_BASE_URL = 'http://localhost:5000/api'; // Base URL of the backend API
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api'; // Base URL of the backend API
 
 const SignUp = () => {
   const [username, setUsername] = useState('');

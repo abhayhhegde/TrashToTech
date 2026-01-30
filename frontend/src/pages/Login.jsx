@@ -11,7 +11,6 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // API.post('/login') automatically becomes http://localhost:5000/api/login
       const response = await API.post('/login', { email, password });
   
       if (response.status === 200) {
