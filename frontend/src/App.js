@@ -11,47 +11,44 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RecyclePage from "./pages/RecyclePage";
 import Rewards from "./pages/Rewards";
-import AdminConfirm from "./pages/AdminConfirm";
 import FacilityLocator from "./pages/FacilityLocator";
 import FacilityLogin from "./pages/FacilityLogin";
 import FacilityRegister from "./pages/FacilityRegister";
 import FacilityConfirm from "./pages/FacilityConfirm";
+import FacilityDashboard from './pages/FacilityDashboard';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col bg-gray-900">
-        <Navbar /> {/* Navbar will be present on every page */}
-        <div className="flex-grow flex justify-center items-center">
+      <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+        <Navbar />
+        
+        
+        <div className="flex-grow w-full"> 
           <Routes>
-            <Route path="/" element={<Home />} /> {/* Home page */}
-            <Route path="/login" element={<Login />} /> {/* Login page */}
-            <Route path="/signup" element={<Signup />} /> {/* Signup page */}
-            <Route path="/contact" element={<Contact />} /> {/* Contact page */}
-            <Route path="/about" element={<About />} /> {/* About page */}
-            <Route path="/recyclepage" element={<RecyclePage />} />
-            <Route path="/rewards" element={<Rewards />}></Route>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<About />} />
+            
+            {/* User Features */}
+            <Route path="/recycle" element={<ProtectedRoute><RecyclePage /></ProtectedRoute>} />
+            <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            
+            {/* Maps */}
             <Route path="/facilities" element={<FacilityLocator />} />
-            <Route path="/facility-locator" element={<FacilityLocator />} />
-
-            {/* Facility Routes */}
+            
+            {/* Facility Portal */}
             <Route path="/facility/login" element={<FacilityLogin />} />
             <Route path="/facility/register" element={<FacilityRegister />} />
             <Route path="/facility/confirm" element={<FacilityConfirm />} />
-
-            {/* Protected Dashboard route */}
-            <Route
-              path="/dashboard"
-              element={
-               <ProtectedRoute>
-                  <Dashboard />
-               </ProtectedRoute>
-              }
-            />
-            <Route path="/admin/confirm" element={<ProtectedRoute><AdminConfirm /></ProtectedRoute>} />
+            <Route path="/facility-dashboard" element={<FacilityDashboard />} />
           </Routes>
         </div>
-        <Footer /> {/* Footer will be present on every page */}
+        
+        <Footer />
       </div>
     </Router>
   );

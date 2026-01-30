@@ -1,10 +1,11 @@
-// frontend/src/components/FacilityMap.jsx
+// src/components/FacilityMap.jsx
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'; // Keeps pins visible
 import API from '../api/http';
 
-// fix default marker icons (Leaflet default image path issue)
+// Fix for Leaflet's missing icon images
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -12,17 +13,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const FacilityMap = ({ center = [12.97, 77.59], zoom = 11 }) => {
+const FacilityMap = ({ center = [12.9716, 77.5946], zoom = 11, onSelectFacility }) => {
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await API.get('/api/facilities');
+        // --- FIX IS HERE: Added '/api' to the path ---
+        const res = await API.get('/facilities'); 
         setFacilities(res.data || []);
       } catch (err) {
-        console.error('Failed load facilities', err);
+        console.error('Failed to load facilities:', err);
       } finally {
         setLoading(false);
       }
@@ -31,28 +33,51 @@ const FacilityMap = ({ center = [12.97, 77.59], zoom = 11 }) => {
   }, []);
 
   return (
-    <div className="w-full h-[80vh]">
+    <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden shadow-lg border border-gray-700 relative z-0">
       <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }}>
-        <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {facilities.map((f) => {
-          const coords = (f.location && f.location.coordinates) || null;
-          if (!coords) return null;
+        <TileLayer 
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" 
+          attribution='&copy; OpenStreetMap contributors'
+        />
+        
+        {facilities.map((f, index) => {
+          // Check for valid location data
+          const coords = f.location?.coordinates;
+          if (!coords || coords.length !== 2) return null;
+          
+          // CRITICAL: MongoDB is [Longitude, Latitude], Leaflet needs [Latitude, Longitude]
           const [lng, lat] = coords;
+
           return (
-            <Marker key={f._id} position={[lat, lng]}>
+            <Marker 
+              key={f._id || index} 
+              position={[lat, lng]} 
+              eventHandlers={{
+                click: () => onSelectFacility && onSelectFacility(f),
+              }}
+            >
               <Popup>
-                <div style={{ minWidth: 200 }}>
-                  <strong>{f.name}</strong>
-                  <div style={{ fontSize: 12, marginTop: 6 }}>{f.address}</div>
-                  <div style={{ marginTop: 6 }}>Capacity: {f.capacity ?? 'N/A'}</div>
-                  <div style={{ marginTop: 4, fontSize: 11, color: '#666' }}>Source: {f.source || 'CPCB'}</div>
+                <div className="text-gray-900 min-w-[200px]">
+                  <h3 className="font-bold text-lg">{f.name}</h3>
+                  <p className="text-sm my-1">{f.address}</p>
+                  <button 
+                    className="mt-2 bg-green-600 text-white w-full py-1 rounded text-sm font-semibold hover:bg-green-700"
+                    onClick={() => onSelectFacility && onSelectFacility(f)}
+                  >
+                    Select This Facility
+                  </button>
                 </div>
               </Popup>
             </Marker>
           );
         })}
       </MapContainer>
-      {loading && <div className="text-center mt-2 text-gray-400">Loading facilities…</div>}
+      
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 z-[1000] text-white">
+          Loading Map Data...
+        </div>
+      )}
     </div>
   );
 };

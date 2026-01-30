@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import QRCode from 'react-qr-code'; 
 import API from '../api/http';
-
+import { getLevel, getNextLevelProgress } from '../utils/levelLogic';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all'); // all, scheduled, completed, cancelled
-  const [selectedQR, setSelectedQR] = useState(null); // For QR modal
+  const [selectedQR, setSelectedQR] = useState(null); 
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -21,315 +21,241 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsRes, historyRes] = await Promise.all([
-        API.get('/api/user/stats'),
-        API.get('/api/user/history')
-      ]);
-      setStats(statsRes.data);
-      setHistory(historyRes.data); // Get ALL visits
-      setError(null);
+      
+      const res = await API.get('/users/profile');
+      const { user, stats: backendStats, history: visitHistory } = res.data;
+
+      
+      const itemsByCategory = {};
+      let calculatedTotalItems = 0;
+      let totalPendingPoints = 0;
+
+      visitHistory.forEach(visit => {
+        // Calculate pending points manually from history to be safe
+        if (visit.status === 'scheduled' || visit.status === 'pending') {
+            totalPendingPoints += (visit.pendingPoints || 0);
+        }
+
+        // Logic for Pie Chart & Total Count
+        if (visit.items && Array.isArray(visit.items)) {
+          visit.items.forEach(item => {
+            const cat = item.category || 'other';
+            const qty = item.quantity || 1;
+            
+            // Only count items as "Recycled" if status is COMPLETED
+            if (visit.status === 'completed') {
+                calculatedTotalItems += qty;
+            }
+
+            // Pie Chart Data
+            if (visit.status === 'completed') {
+                const co2Value = (item.weight || 1) * 2; 
+                if (!itemsByCategory[cat]) {
+                itemsByCategory[cat] = { co2: 0, count: 0 };
+                }
+                itemsByCategory[cat].co2 += co2Value;
+                itemsByCategory[cat].count += qty;
+            }
+          });
+        }
+      });
+
+      // 3. Map to State
+      setStats({
+        level: user.level || 'Bronze',
+        totalPoints: user.points,  
+        pendingPoints: totalPendingPoints, 
+        totalItems: calculatedTotalItems, // ONLY completed items
+        totalCO2Reduction: backendStats.co2Saved,
+        itemsByCategory: itemsByCategory
+      });
+
+      setHistory(visitHistory);
+
     } catch (err) {
       console.error('Dashboard fetch error:', err);
-      setError('Failed to load dashboard data');
+      if (err.response && err.response.status === 401) {
+          navigate('/login');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredHistory = filterStatus === 'all'
-    ? history
-    : history.filter(visit => visit.status === filterStatus);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white p-8 flex items-center justify-center">
-        <div className="text-2xl">Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white p-8 flex items-center justify-center">
-        <div className="text-red-500 text-xl">{error}</div>
-      </div>
-    );
-  }
-
-  // Prepare pie chart data from actual stats
-  const categoryColors = {
-    smartphone: '#FF6384',
-    laptop: '#36A2EB',
-    tablet: '#FFCE56',
-    other: '#4BC0C0'
+  // Helper for QR Download
+  const downloadQR = () => {
+    const svg = document.getElementById("qr-code-svg");
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `QR-${selectedQR.referenceNumber}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  if (loading) return (
+    <div className="min-h-screen bg-gray-900 text-white p-8 flex items-center justify-center animate-pulse pt-24">
+      Loading dashboard...
+    </div>
+  );
+
+  const categoryColors = { smartphone: '#FF6384', laptop: '#36A2EB', tablet: '#FFCE56', other: '#4BC0C0' };
   const hasData = stats?.itemsByCategory && Object.keys(stats.itemsByCategory).length > 0;
 
   const co2ReductionData = hasData ? {
-    labels: Object.keys(stats.itemsByCategory).map(cat =>
-      cat.charAt(0).toUpperCase() + cat.slice(1)
-    ),
-    datasets: [
-      {
-        label: 'CO₂ Reduction (kg)',
-        data: Object.values(stats.itemsByCategory).map(item => Math.round(item.co2)),
-        backgroundColor: Object.keys(stats.itemsByCategory).map(
-          cat => categoryColors[cat.toLowerCase()] || '#4BC0C0'
-        ),
-        hoverBackgroundColor: Object.keys(stats.itemsByCategory).map(
-          cat => categoryColors[cat.toLowerCase()] || '#4BC0C0'
-        ),
-      },
-    ],
-  } : {
-    labels: ['No Data'],
+    labels: Object.keys(stats.itemsByCategory).map(cat => cat.charAt(0).toUpperCase() + cat.slice(1)),
     datasets: [{
-      label: 'CO₂ Reduction (kg)',
-      data: [1],
-      backgroundColor: ['#374151'],
-    }]
-  };
+      data: Object.values(stats.itemsByCategory).map(item => Math.round(item.co2)),
+      backgroundColor: Object.keys(stats.itemsByCategory).map(cat => categoryColors[cat] || '#9ca3af'),
+      borderWidth: 0
+    }],
+  } : { labels: ['No Data'], datasets: [{ data: [1], backgroundColor: ['#374151'] }] };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  const currentLevel = getLevel(stats.totalPoints || 0);
+  const progressPercent = getNextLevelProgress(stats.totalPoints || 0);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-8 text-center mt-20">My Dashboard</h1>
-
-      {/* User Level Badge */}
-      <div className="mb-6 text-center">
-        <span className={`inline-block px-4 py-2 rounded-full text-lg font-bold ${
-          stats?.level === 'Platinum' ? 'bg-gray-300 text-gray-900' :
-          stats?.level === 'Gold' ? 'bg-yellow-500 text-gray-900' :
-          stats?.level === 'Silver' ? 'bg-gray-400 text-gray-900' :
-          'bg-orange-700 text-white'
-        }`}>
-          {stats?.level || 'Bronze'} Level
-        </span>
-      </div>
-
-      {/* Recycle New Item Button */}
-      <div className="mb-6 text-center">
-        <Link to="/recyclepage">
-          <button className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
-            Recycle New Item
-          </button>
+    <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div>
+           <h1 className="text-3xl font-bold">My Dashboard</h1>
+           <p className="text-gray-400">Track your environmental impact</p>
+        </div>
+        <Link to="/facilities" className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition shadow-lg shadow-green-900/20">
+          + Schedule New Drop-off
         </Link>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Recycled Items */}
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Recycled Items</h2>
-          <p className="text-4xl font-bold">{stats?.totalItems || 0}</p>
-          <p className="text-gray-400 mt-2">Items Recycled</p>
-        </div>
+      {/* LEVEL CARD */}
+    <div className={`bg-gray-800 p-6 rounded-xl border-2 ${currentLevel.borderColor} shadow-lg mb-8 flex items-center justify-between`}>
+      <div>
+        <p className="text-gray-400 uppercase text-xs tracking-wider">Current Status</p>
+        <h2 className={`text-3xl font-bold ${currentLevel.color}`}>{currentLevel.name}</h2>
+        <p className="text-sm text-gray-400 mt-1">{currentLevel.description}</p>
+      </div>
+      
+      {/* Visual Progress */}
+      <div className="text-right">
+        <p className="text-2xl font-bold text-white">{Math.round(progressPercent)}%</p>
+        <p className="text-xs text-gray-500">to next rank</p>
+      </div>
+    </div>
 
-        {/* Points Earned */}
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Points Earned</h2>
-          <p className="text-4xl font-bold">{stats?.totalPoints || 0}</p>
-          <p className="text-gray-400 mt-2">Redeemable Points</p>
-          {stats?.pendingPoints > 0 && (
-            <p className="text-yellow-500 text-sm mt-1">+{stats.pendingPoints} pending</p>
-          )}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {/* RECYCLED ITEMS (Completed Only) */}
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center border-t-4 border-blue-500">
+          <p className="text-gray-400 uppercase text-xs tracking-wider">Recycled Items</p>
+          <p className="text-4xl font-bold mt-2">{stats?.totalItems || 0}</p>
+          <p className="text-gray-500 text-xs mt-1">Verified Drop-offs</p>
         </div>
-
-        {/* Contributions to Society */}
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Your Carbon Footprint</h2>
-          <p className="text-4xl font-bold">{stats?.totalCO2Reduction || 0} kg</p>
-          <p className="text-gray-400 mt-2">CO₂ Reduction</p>
+        
+        {/* POINTS */}
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center border-t-4 border-yellow-500">
+          <p className="text-gray-400 uppercase text-xs tracking-wider">Total Points</p>
+          <p className="text-4xl font-bold mt-2">{stats?.totalPoints || 0}</p>
+          {stats?.pendingPoints > 0 && <p className="text-yellow-400 text-sm mt-1 animate-pulse">+{stats.pendingPoints} pending</p>}
+        </div>
+        
+        {/* CO2 */}
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center border-t-4 border-green-500">
+          <p className="text-gray-400 uppercase text-xs tracking-wider">CO₂ Saved (kg)</p>
+          <p className="text-4xl font-bold mt-2">{stats?.totalCO2Reduction || 0}</p>
         </div>
       </div>
 
-      {/* All Recycling Visits */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">All Recycling Visits</h2>
-
-        {/* Filter Buttons */}
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-4 py-2 rounded ${filterStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            All ({history.length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('scheduled')}
-            className={`px-4 py-2 rounded ${filterStatus === 'scheduled' ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Pending ({history.filter(v => v.status === 'scheduled').length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('completed')}
-            className={`px-4 py-2 rounded ${filterStatus === 'completed' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Completed ({history.filter(v => v.status === 'completed').length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('cancelled')}
-            className={`px-4 py-2 rounded ${filterStatus === 'cancelled' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Cancelled ({history.filter(v => v.status === 'cancelled').length})
-          </button>
-        </div>
-
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg overflow-x-auto">
-          {filteredHistory && filteredHistory.length > 0 ? (
-            <table className="w-full text-left">
+      {/* History & Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+          <div className="flex justify-between items-center mb-4">
+             <h2 className="text-xl font-bold">Recent Activity</h2>
+             <button onClick={fetchDashboardData} className="text-xs text-blue-400 hover:text-white border border-blue-400 px-2 py-1 rounded">Refresh Data</button>
+          </div>
+          <div className="overflow-auto max-h-96">
+            <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="pb-4">Reference</th>
-                  <th className="pb-4">Items</th>
-                  <th className="pb-4">Facility</th>
-                  <th className="pb-4">Date</th>
-                  <th className="pb-4">Status</th>
-                  <th className="pb-4">Points</th>
-                  <th className="pb-4">QR Code</th>
+                <tr className="text-gray-400 border-b border-gray-700 uppercase text-xs">
+                    <th className="pb-3 px-2">Date</th>
+                    <th className="pb-3 px-2">Items</th>
+                    <th className="pb-3 px-2">Status</th>
+                    <th className="pb-3 px-2 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredHistory.map((visit, idx) => (
-                  <tr key={visit._id || idx} className="border-b border-gray-700">
-                    <td className="py-3">
-                      <span className="font-mono text-sm font-bold text-blue-400">
-                        {visit.referenceNumber}
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      {visit.items && visit.items.length > 0
-                        ? visit.items.map(item => item.itemName).join(', ')
-                        : 'N/A'}
-                    </td>
-                    <td className="py-3 text-sm">
-                      {visit.facility ? (
-                        <div>
-                          <div className="font-semibold">{visit.facility.name}</div>
-                          <div className="text-gray-400 text-xs">{visit.facility.address}</div>
-                        </div>
-                      ) : (
-                        'N/A'
-                      )}
-                    </td>
-                    <td className="py-3">{formatDate(visit.scheduledAt)}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        visit.status === 'completed' ? 'bg-green-700' :
-                        visit.status === 'cancelled' ? 'bg-red-700' :
-                        'bg-yellow-700'
-                      }`}>
-                        {visit.status}
-                      </span>
-                    </td>
-                    <td className="py-3 font-semibold">
-                      {visit.status === 'completed' ? visit.actualPoints : visit.estimatedPoints}
-                      {visit.status === 'scheduled' && (
-                        <span className="text-yellow-500 text-xs block">
-                          +{visit.pendingPoints} pending
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3">
-                      {visit.qrCodeDataUrl ? (
-                        <button
-                          onClick={() => setSelectedQR(visit)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                        >
-                          View QR
-                        </button>
-                      ) : (
-                        <span className="text-gray-500 text-xs">No QR</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-gray-700">
+                {history.length === 0 ? (
+                    <tr><td colSpan="4" className="py-8 text-center text-gray-500">No history found.</td></tr>
+                ) : (
+                    history.map((visit) => (
+                      <tr key={visit._id} className="hover:bg-gray-700/30 transition">
+                        <td className="py-3 px-2">{new Date(visit.scheduledAt).toLocaleDateString()}</td>
+                        <td className="py-3 px-2">
+                            {visit.items.map(i => i.category || 'Item').slice(0, 2).join(', ')} 
+                            {visit.items.length > 2 && ` +${visit.items.length - 2}`}
+                        </td>
+                        <td className="py-3 px-2">
+                            <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${
+                                visit.status === 'completed' ? 'bg-green-900/50 text-green-300' : 
+                                visit.status === 'rejected' ? 'bg-red-900/50 text-red-300' :
+                                'bg-yellow-900/50 text-yellow-300'
+                            }`}>
+                                {visit.status === 'scheduled' ? 'Pending' : visit.status}
+                            </span>
+                        </td>
+                        <td className="py-3 px-2 text-right">
+                          <button onClick={() => setSelectedQR(visit)} className="text-blue-400 hover:text-blue-300 text-xs border border-blue-400/30 px-2 py-1 rounded">
+                             View QR
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                )}
               </tbody>
             </table>
-          ) : (
-            <div className="text-center text-gray-400 py-8">
-              {filterStatus === 'all'
-                ? 'No recycling history yet. Start recycling to see your impact!'
-                : `No ${filterStatus} visits.`}
-            </div>
-          )}
+          </div>
+        </div>
+
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 flex flex-col items-center justify-center">
+          <h2 className="text-xl font-bold mb-6">Impact Breakdown (Verified)</h2>
+          <div className="w-64 h-64">
+            <Pie data={co2ReductionData} options={{ maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } } }} />
+          </div>
         </div>
       </div>
 
-      {/* QR Code Modal */}
+      {/* QR Modal */}
       {selectedQR && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-          onClick={() => setSelectedQR(null)}
-        >
-          <div
-            className="bg-gray-800 p-6 rounded-lg max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">QR Code - {selectedQR.referenceNumber}</h3>
-              <button
-                onClick={() => setSelectedQR(null)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setSelectedQR(null)}>
+          <div className="bg-white p-6 rounded-xl text-center max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Scan at Facility</h3>
+            <p className="text-gray-500 text-sm mb-4">Show this to verify your drop-off</p>
+            
+            <div className="bg-gray-100 p-4 rounded-lg mb-4 inline-block">
+               <QRCode id="qr-code-svg" value={selectedQR.referenceNumber} size={180} />
             </div>
-            <div className="bg-white p-4 rounded flex justify-center items-center">
-              <img src={selectedQR.qrCodeDataUrl} alt="QR Code" className="w-64 h-64" />
-            </div>
-            <div className="mt-4 text-center">
-              <p className="text-gray-400 text-sm mb-2">Show this QR code at the facility</p>
-              <p className="font-mono text-lg font-bold text-blue-400">{selectedQR.referenceNumber}</p>
-              {selectedQR.facility && (
-                <div className="mt-3 text-sm">
-                  <p className="font-semibold">{selectedQR.facility.name}</p>
-                  <p className="text-gray-400">{selectedQR.facility.address}</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = selectedQR.qrCodeDataUrl;
-                  link.download = `QR-${selectedQR.referenceNumber}.png`;
-                  link.click();
-                }}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-              >
-                Download QR
-              </button>
-              <button
-                onClick={() => setSelectedQR(null)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
-              >
-                Close
-              </button>
+            
+            <p className="text-gray-900 font-mono font-bold text-lg mb-6 tracking-widest">{selectedQR.referenceNumber}</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={downloadQR} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">Download</button>
+              <button onClick={() => setSelectedQR(null)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition">Close</button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Contribution Graph */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Contribution by CO₂ Reduction</h2>
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-          {/* Pie Chart */}
-          <div className="h-64 bg-gray-700 flex items-center justify-center rounded-lg">
-            {hasData ? (
-              <Pie data={co2ReductionData} />
-            ) : (
-              <div className="text-gray-400">No data to display yet. Start recycling!</div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

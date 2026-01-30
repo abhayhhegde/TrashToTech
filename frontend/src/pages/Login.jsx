@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import API from '../api/http';
-
-const API_BASE_URL = 'http://localhost:5000'; // Base URL of the backend API
+import API from '../api/http'; // This handles the base URL automatically
 
 const Login = () => {
-  const [email, setEmail] = useState(''); // Use email instead of username
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -14,22 +11,23 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // API.post('/login') automatically becomes http://localhost:5000/api/login
       const response = await API.post('/login', { email, password });
   
       if (response.status === 200) {
         const { token } = response.data;
-        // Use sessionStorage instead of localStorage - expires when browser closes
+        // sessionStorage expires when the browser tab closes (good for public computers)
         sessionStorage.setItem('authToken', token);
 
-        // Redirect to the dashboard
+        // Redirect to the User Dashboard
         navigate('/dashboard');
       }
     } catch (err) {
+      console.error("Login Error:", err);
       setError('Invalid credentials, please try again.');
     }
   };
   
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-md">

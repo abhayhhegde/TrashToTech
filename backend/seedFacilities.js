@@ -1,5 +1,5 @@
 // backend/seedFacilities.js
-// Script to seed the database with sample e-waste recycling facilities
+
 
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -9,7 +9,7 @@ const Facility = require('./models/Facility');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/trash_to_tech';
 
-// Sample facilities across major Indian cities (Bangalore focus)
+
 const sampleFacilities = [
   // Bangalore facilities
   {

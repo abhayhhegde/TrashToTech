@@ -1,84 +1,84 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import API from '../api/http';
 import { useNavigate, Link } from 'react-router-dom';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 const FacilityLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
-      const response = await axios.post(`${API_BASE_URL}/facility/login`, { email, password });
+      // FIX: Changed from '/auth/login' to '/facility/login' to match server.js
+      const res = await API.post('/facility/login', formData);
+      
+      // Store Token & Facility Info
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('facilityName', res.data.name);
+      localStorage.setItem('userType', 'facility'); // Critical for separating User vs Facility logic
 
-      if (response.status === 200) {
-        const { token, email, name, facilityId } = response.data;
-        // Use sessionStorage - expires when browser closes
-        sessionStorage.setItem('facilityToken', token);
-        sessionStorage.setItem('facilityEmail', email);
-        sessionStorage.setItem('facilityName', name);
-        sessionStorage.setItem('facilityId', facilityId);
-
-        // Redirect to facility confirm page
-        navigate('/facility/confirm');
-      }
+      // Redirect to the Facility Dashboard
+      navigate('/facility-dashboard'); 
     } catch (err) {
-      setError(err?.response?.data?.error || 'Invalid credentials, please try again.');
+      console.error(err);
+      const msg = err.response?.data?.error || 'Login failed. Please check credentials.';
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-white">Facility Login</h2>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-6">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md border-t-4 border-green-500">
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">Facility Access</h2>
+        
+        {error && (
+          <div className="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded mb-4 text-center text-sm">
+            {error}
+          </div>
+        )}
 
-        <div className="mb-4 p-3 bg-blue-900 rounded text-sm text-blue-200">
-          <strong>Existing Facilities:</strong> Default password is <code className="bg-blue-800 px-2 py-1 rounded">admin123</code>
-        </div>
-
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="block text-gray-400 mb-2" htmlFor="email">Facility Email</label>
-            <input
-              type="email"
-              id="email"
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white placeholder-gray-400"
-              placeholder="Enter facility email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-gray-400 text-sm mb-1">Email</label>
+            <input 
+              type="email" 
+              className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-green-500 outline-none" 
+              value={formData.email} 
+              onChange={(e) => setFormData({...formData, email: e.target.value})} 
+              required 
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-400 mb-2" htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white placeholder-gray-400"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+          
+          <div>
+            <label className="block text-gray-400 text-sm mb-1">Password</label>
+            <input 
+              type="password" 
+              className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-green-500 outline-none" 
+              value={formData.password} 
+              onChange={(e) => setFormData({...formData, password: e.target.value})} 
+              required 
             />
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Login
-            </button>
-            <Link to="/facility/register" className="text-blue-500 hover:underline">Register Facility</Link>
-          </div>
+
+          <button 
+            disabled={loading}
+            className={`w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {loading ? 'Logging in...' : 'Login to Console'}
+          </button>
         </form>
 
         <div className="mt-4 text-center">
-          <Link to="/login" className="text-gray-400 text-sm hover:underline">User Login</Link>
+          <Link to="/facility/register" className="text-sm text-green-400 hover:underline">
+            Register New Facility
+          </Link>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const FacilitySchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true }, // for facility login
-  passwordHash: { type: String }, // hashed password for facility authentication
+  passwordHash: { type: String }, 
   address: { type: String, default: '' },
   capacity: { type: Number, default: null },
   acceptedItems: { type: [String], default: [] },

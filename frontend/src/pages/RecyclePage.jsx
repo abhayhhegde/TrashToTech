@@ -1,318 +1,260 @@
-// frontend/src/pages/RecyclePage.jsx
-import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle } from 'react-leaflet';
-import L from 'leaflet';
+import React, { useEffect, useState } from 'react';
+import QRCode from 'react-qr-code';
 import API from '../api/http';
 import { useNavigate } from 'react-router-dom';
-
-// Fix default icon paths for leaflet if needed
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
-
-// Haversine distance in km
-const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
-  const toRad = (v) => (v * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
-// Small component to capture map clicks and update parent
-const LocationPicker = ({ setUserLocation }) => {
-  useMapEvents({
-    click(e) {
-      setUserLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
-    }
-  });
-  return null;
-};
-
-const makeItemsPayload = (formData) => [
-  {
-    itemName: formData.itemName,
-    category: formData.category.toLowerCase(),
-    condition: formData.condition.toLowerCase(),
-    weight: Number(formData.weight) || 0,
-    quantity: 1
-  }
-];
+import { basePoints, calcPointsForItem } from '../utils/pointsCalculation'; 
 
 const RecyclePage = () => {
   const navigate = useNavigate();
+  
+  // Generate Category List for Dropdown
+  const categories = Object.keys(basePoints).map(key => ({
+    value: key,
+    label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) // 
+  }));
+
+  // Form State
   const [formData, setFormData] = useState({
-    itemName: '',
-    category: '',
+    category: 'smartphone', // Default
+    itemName: '',           // Only used if 'other' is selected
     weight: '',
-    age: '',
-    condition: ''
+    condition: 'moderate',
+    quantity: 1
   });
-
-  const [userLocation, setUserLocation] = useState(null); // {lat, lng}
-  const [nearby, setNearby] = useState([]); // facilities with distance
+  
   const [selectedFacility, setSelectedFacility] = useState(null);
-  const [loadingNearby, setLoadingNearby] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pointsInfo, setPointsInfo] = useState(null);
-  const [qrDataUrl, setQrDataUrl] = useState(null);
-  const [referenceNumber, setReferenceNumber] = useState(null);
+  const [visitResult, setVisitResult] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const mapCenter = [12.97, 77.59]; // Bangalore center default
-  const radiusMeters = 15000; // default search radius (15km)
-  const mapRef = useRef();
 
+  // Load Facility
   useEffect(() => {
-    // if user has saved location in localStorage, prefill (optional)
-    const saved = localStorage.getItem('recycle_user_location');
-    if (saved) {
-      try {
-        const loc = JSON.parse(saved);
-        if (loc && loc.lat && loc.lng) setUserLocation(loc);
-      } catch {}
+    const savedFacility = localStorage.getItem('selectedFacility');
+    if (savedFacility) {
+      setSelectedFacility(JSON.parse(savedFacility));
     }
   }, []);
 
-  useEffect(() => {
-    if (userLocation) {
-      // save short-lived
-      localStorage.setItem('recycle_user_location', JSON.stringify(userLocation));
-    }
-  }, [userLocation]);
-
+  // Handle Input Changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const validateFormData = () => {
-    const { itemName, category, weight, age, condition } = formData;
-    return itemName && category && Number(weight) > 0 && age !== '' && condition;
-  };
+  // Live Point Calculation
+  const estimatedPoints = calcPointsForItem(formData);
 
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation not supported by your browser.');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        // move map to this location
-        if (mapRef.current) {
-          mapRef.current.setView([pos.coords.latitude, pos.coords.longitude], 13);
-        }
-      },
-      err => {
-        setError('Unable to get your location — allow location access and try again.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  const fetchNearbyFacilities = async (radius = radiusMeters) => {
-    setError(null);
-    if (!userLocation) {
-      setError('Please pick a location on the map or use device location first.');
-      return;
-    }
-    setLoadingNearby(true);
-    try {
-      // Prefer backend nearby query which uses $nearSphere
-      const res = await API.get(`/api/facilities/nearby?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=${radius}`);
-      const facilities = res.data || [];
-      // compute exact distances client-side (for display) and sort
-      const withDist = facilities.map(f => {
-        const coords = f.location?.coordinates || [0, 0];
-        const [lng, lat] = coords;
-        const distKm = haversineDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
-        return { ...f, distanceKm: Number(distKm.toFixed(2)) };
-      }).sort((a, b) => a.distanceKm - b.distanceKm);
-      setNearby(withDist);
-      if (withDist.length) {
-        setSelectedFacility(withDist[0]);
-      } else {
-        setSelectedFacility(null);
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch nearby facilities.');
-    } finally {
-      setLoadingNearby(false);
-    }
-  };
-
-  const handleSchedule = async () => {
-    setError(null);
-    if (!validateFormData()) {
-      setError('Please complete the item details.');
-      return;
-    }
+  const handleSubmit = async () => {
     if (!selectedFacility) {
-      setError('Please select a facility from the list.');
+      setError("Please select a facility first.");
       return;
     }
-    setIsSubmitting(true);
+    
+    // Validation: Require Name if "Other" is selected
+    if (formData.category === 'other' && !formData.itemName) {
+      setError("Please specify the Item Name.");
+      return;
+    }
+
+    if (!formData.weight) {
+      setError("Please enter approximate weight.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const items = makeItemsPayload(formData);
-      const token = sessionStorage.getItem('authToken');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // Determine Final Item Name
+      
+      const finalItemName = formData.category === 'other' 
+        ? formData.itemName 
+        : categories.find(c => c.value === formData.category)?.label || formData.category;
+
       const payload = {
-        items,
         facilityId: selectedFacility._id,
-        userLocation
+        estimatedPoints: estimatedPoints, // Send frontend estimate
+        items: [{
+          itemName: finalItemName,
+          category: formData.category,
+          condition: formData.condition,
+          weight: parseFloat(formData.weight),
+          quantity: parseInt(formData.quantity),
+          estimatedPoints: estimatedPoints
+        }]
       };
-      const resp = await API.post('/api/visit/schedule', payload, { headers });
-      setPointsInfo({ estimatedPoints: resp.data.estimatedPoints, pendingPoints: resp.data.pendingPoints });
-      setQrDataUrl(resp.data.qrDataUrl || null);
-      setReferenceNumber(resp.data.referenceNumber || null);
-      // optionally navigate to a details page or show modal
+
+      const res = await API.post('/visit/schedule', payload);
+      setVisitResult(res.data);
+      
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.error || 'Failed to schedule visit');
+      setError(err?.response?.data?.error || "Scheduling failed");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
+  // --- VIEW: SUCCESS (QR CODE) ---
+  if (visitResult) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white p-6 pt-24 flex justify-center">
+        <div className="bg-gray-800 p-8 rounded-lg max-w-lg w-full text-center shadow-2xl border border-green-600">
+          <h2 className="text-3xl font-bold text-green-400 mb-2">Visit Scheduled!</h2>
+          <p className="text-gray-400 mb-6">Show this QR code at the facility.</p>
+          
+          <div className="bg-white p-4 rounded-lg inline-block mb-6">
+            <QRCode value={visitResult.referenceNumber} size={180} />
+          </div>
+
+          <div className="text-2xl font-mono font-bold mb-6 tracking-wider bg-gray-900 p-2 rounded border border-gray-700">
+            {visitResult.referenceNumber}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-700 p-3 rounded">
+              <div className="text-sm text-gray-400">Total Value</div>
+              <div className="text-xl font-bold text-yellow-400">{visitResult.estimatedPoints} pts</div>
+            </div>
+            <div className="bg-gray-700 p-3 rounded border border-green-500/30">
+              <div className="text-sm text-gray-400">Upfront (30%)</div>
+              <div className="text-xl font-bold text-green-400">+{visitResult.pendingPoints || 0} pts</div>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold transition shadow-lg"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VIEW: FORM ---
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 mt-20">
-      <h1 className="text-3xl font-bold mb-4">Recycle Your E-Waste</h1>
-
-      {error && <div className="bg-red-700 p-3 rounded mb-4">{error}</div>}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-800 p-4 rounded">
-          <h2 className="font-semibold mb-2">Item Details</h2>
-
-          <label className="block text-sm mt-2">Item Name</label>
-          <input name="itemName" value={formData.itemName} onChange={handleInputChange} className="w-full p-2 bg-gray-700 rounded" />
-
-          <label className="block text-sm mt-2">Category</label>
-          <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-2 bg-gray-700 rounded">
-            <option value="">Select</option>
-            <option>Smartphone</option>
-            <option>Laptop</option>
-            <option>Tablet</option>
-            <option>Other</option>
-          </select>
-
-          <label className="block text-sm mt-2">Weight (kg)</label>
-          <input name="weight" type="number" value={formData.weight} onChange={handleInputChange} className="w-full p-2 bg-gray-700 rounded" />
-
-          <label className="block text-sm mt-2">Age (years)</label>
-          <input name="age" type="number" value={formData.age} onChange={handleInputChange} className="w-full p-2 bg-gray-700 rounded" />
-
-          <label className="block text-sm mt-2">Condition</label>
-          <select name="condition" value={formData.condition} onChange={handleInputChange} className="w-full p-2 bg-gray-700 rounded">
-            <option value="">Select</option>
-            <option>Good</option>
-            <option>Moderate</option>
-            <option>Poor</option>
-          </select>
-
-          <div className="mt-4 flex gap-2">
-            <button onClick={useMyLocation} className="bg-blue-600 px-3 py-2 rounded hover:bg-blue-700">Use my location</button>
-            <button onClick={() => {
-              // center map on Bangalore if no location
-              if (mapRef.current) mapRef.current.setView(mapCenter, 11);
-            }} className="bg-gray-600 px-3 py-2 rounded hover:bg-gray-500">Reset map</button>
-            <button onClick={() => fetchNearbyFacilities(radiusMeters)} className="ml-auto bg-green-600 px-3 py-2 rounded hover:bg-green-700">Find Nearby</button>
-          </div>
-
-          <div className="mt-3 text-sm text-gray-300">
-            Tip: Click on the map to choose a pickup location manually, or click "Use my location".
-          </div>
-
-          <div className="mt-4">
-            <button disabled={isSubmitting} onClick={handleSchedule} className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700">
-              {isSubmitting ? 'Scheduling...' : 'Schedule & Get Points'}
-            </button>
-          </div>
-
-          {pointsInfo && (
-            <div className="mt-4 bg-gray-700 p-3 rounded">
-              <div>Estimated points: <strong>{pointsInfo.estimatedPoints}</strong></div>
-              <div>Pending (credited now): <strong>{pointsInfo.pendingPoints}</strong></div>
-              {referenceNumber && <div>Ref: <strong>{referenceNumber}</strong></div>}
-              {qrDataUrl && <div className="mt-2"><img src={qrDataUrl} alt="QR" style={{ width: 140 }} /></div>}
+    <div className="min-h-screen bg-gray-900 text-white p-6 pt-24">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        {/* LEFT: FACILITY CARD */}
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg h-fit">
+          <h2 className="text-xl font-bold mb-4 text-blue-400 border-b border-gray-700 pb-2">1. Selected Facility</h2>
+          {selectedFacility ? (
+            <div>
+              <h3 className="text-2xl font-bold">{selectedFacility.name}</h3>
+              <p className="text-gray-400 mt-1 text-sm">{selectedFacility.address}</p>
+              <div className="mt-4 flex gap-2">
+                 <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded">Verified</span>
+                 <span className="bg-blue-900 text-blue-300 text-xs px-2 py-1 rounded">E-Waste Only</span>
+              </div>
+              <button 
+                onClick={() => navigate('/facilities')}
+                className="mt-6 w-full py-2 border border-blue-500 text-blue-400 hover:bg-blue-900/30 rounded transition text-sm"
+              >
+                Change Facility
+              </button>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">No facility selected.</p>
+              <button 
+                onClick={() => navigate('/facilities')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold transition shadow-lg"
+              >
+                Find Nearest Facility
+              </button>
             </div>
           )}
         </div>
 
-        <div className="bg-gray-800 p-4 rounded">
-          <h2 className="font-semibold mb-2">Pick Location & Choose Facility</h2>
-
-          <div className="w-full h-80 mb-3">
-            <MapContainer
-              center={userLocation ? [userLocation.lat, userLocation.lng] : mapCenter}
-              zoom={userLocation ? 13 : 11}
-              style={{ height: '100%', width: '100%' }}
-              whenCreated={mapInstance => { mapRef.current = mapInstance; }}
-            >
-              <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <LocationPicker setUserLocation={setUserLocation} />
-              {/* show user-chosen location */}
-              {userLocation && (
-                <>
-                  <Marker position={[userLocation.lat, userLocation.lng]}>
-                    <Popup>You selected this location</Popup>
-                  </Marker>
-                  <Circle center={[userLocation.lat, userLocation.lng]} radius={radiusMeters} pathOptions={{ color: '#29b6f6', opacity: 0.3 }} />
-                </>
-              )}
-
-              {/* show facility markers */}
-              {nearby.map(f => {
-                const coords = f.location?.coordinates;
-                if (!coords) return null;
-                const [lng, lat] = coords;
-                return (
-                  <Marker key={f._id} position={[lat, lng]} eventHandlers={{
-                    click: () => setSelectedFacility(f)
-                  }}>
-                    <Popup>
-                      <div style={{ minWidth: 180 }}>
-                        <strong>{f.name}</strong><br />
-                        <small>{f.address}</small><br />
-                        <div>Distance: {f.distanceKm ?? 'N/A'} km</div>
-                        <div style={{ marginTop: 6 }}>
-                          <button onClick={() => setSelectedFacility(f)} className="bg-green-600 px-2 py-1 rounded text-sm mt-2">Select this facility</button>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+        {/* RIGHT: SMART FORM */}
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg">
+          <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+             <h2 className="text-xl font-bold text-green-400">2. Item Details</h2>
+             <span className="text-xs text-gray-500">Step 2 of 2</span>
           </div>
 
-          <div className="space-y-2 max-h-72 overflow-auto">
-            {loadingNearby ? <div>Loading nearby facilities…</div> : (
-              nearby.length === 0 ? <div className="text-gray-400">No facilities loaded. Click 'Find Nearby' after choosing location.</div> :
-                nearby.map(f => (
-                  <div key={f._id} className={`p-3 rounded ${selectedFacility && selectedFacility._id === f._id ? 'bg-green-700' : 'bg-gray-700'}`}>
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="font-semibold">{f.name}</div>
-                        <div className="text-xs text-gray-300">{f.address}</div>
-                        <div className="text-xs text-gray-400">Capacity: {f.capacity ?? 'N/A'}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm">{f.distanceKm} km</div>
-                        <button onClick={() => setSelectedFacility(f)} className="mt-2 bg-indigo-600 px-2 py-1 rounded text-sm">Choose</button>
-                      </div>
-                    </div>
-                  </div>
-                ))
+          {error && <div className="bg-red-900/50 border border-red-500 p-3 text-red-200 text-sm rounded mb-4">{error}</div>}
+          
+          <div className="space-y-4">
+            
+            {/* 1. CATEGORY DROPDOWN */}
+            <div>
+              <label className="block text-sm mb-1 text-gray-400">Select Item Category</label>
+              <select 
+                name="category" 
+                value={formData.category} 
+                onChange={handleInputChange} 
+                className="w-full p-3 bg-gray-700 rounded outline-none border border-gray-600 focus:border-green-500 text-white"
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. DYNAMIC INPUT  */}
+            {formData.category === 'other' && (
+              <div className="animate-fade-in">
+                <label className="block text-sm mb-1 text-yellow-400">Specify Item Name</label>
+                <input 
+                  name="itemName" 
+                  value={formData.itemName} 
+                  onChange={handleInputChange} 
+                  className="w-full p-3 bg-gray-700 rounded outline-none focus:border-yellow-500 border border-yellow-500/50 transition" 
+                  placeholder="e.g. Electric Guitar" 
+                />
+              </div>
             )}
+            
+            {/* 3. DETAILS GRID */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm mb-1 text-gray-400">Condition</label>
+                <select name="condition" value={formData.condition} onChange={handleInputChange} className="w-full p-3 bg-gray-700 rounded outline-none border border-gray-600 focus:border-green-500">
+                  <option value="good">Good (Working)</option>
+                  <option value="moderate">Moderate (Fixable)</option>
+                  <option value="poor">Poor (Scrap)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-400">Quantity</label>
+                <input type="number" name="quantity" min="1" value={formData.quantity} onChange={handleInputChange} className="w-full p-3 bg-gray-700 rounded outline-none focus:border-green-500 border border-gray-600" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1 text-gray-400">Approx Weight (kg)</label>
+              <input type="number" name="weight" value={formData.weight} onChange={handleInputChange} className="w-full p-3 bg-gray-700 rounded outline-none focus:border-green-500 border border-gray-600" placeholder="0.5" />
+            </div>
+
+            {/* LIVE PREVIEW BOX */}
+            <div className="bg-gray-900 p-4 rounded border border-gray-700 flex justify-between items-center mt-2">
+               <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider">Estimated Value</p>
+                  <p className="text-xs text-gray-500">Based on material rates</p>
+               </div>
+               <div className="text-right">
+                  <p className="text-2xl font-bold text-green-400">{estimatedPoints} <span className="text-sm">pts</span></p>
+               </div>
+            </div>
+
+            <button 
+              onClick={handleSubmit}
+              disabled={loading || !selectedFacility}
+              className={`w-full py-4 rounded-lg font-bold mt-4 transition shadow-lg flex justify-center items-center gap-2 ${
+                loading || !selectedFacility 
+                  ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+                  : 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white'
+              }`}
+            >
+              {loading ? (
+                <>Processing...</>
+              ) : (
+                <>Schedule & Get {Math.floor(estimatedPoints * 0.3)} Pts Now ➔</>
+              )}
+            </button>
           </div>
         </div>
       </div>

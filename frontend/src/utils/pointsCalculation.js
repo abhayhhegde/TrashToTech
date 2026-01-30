@@ -1,7 +1,7 @@
-// backend/utils/pointcalculations.js
+// frontend/src/utils/pointcalculations.js
 
-const basePoints = {
-  // --- TIER 1: HIGH VALUE ---
+export const basePoints = {
+  // --- TIER 1: HIGH VALUE (Gold/Lithium Rich) ---
   laptop: 600,         
   smartphone: 250,     
   tablet: 300,         
@@ -9,7 +9,7 @@ const basePoints = {
   camera: 200,         
   drone: 400,          
 
-  // --- TIER 2: MEDIUM VALUE ---
+  // --- TIER 2: MEDIUM VALUE (Copper/Aluminum Rich) ---
   desktop: 500,     
   monitor: 200,    
   console: 250,        
@@ -19,14 +19,14 @@ const basePoints = {
   router: 100,         
   server: 800,         
 
-  // --- TIER 3: APPLIANCES ---
+  // --- TIER 3: APPLIANCES (Heavy Metal) ---
   fridge: 800,         
   ac_unit: 900,        
   washing_machine: 600,
   microwave: 300,      
   television: 250,     
 
-  // --- TIER 4: ACCESSORIES ---
+  // --- TIER 4: ACCESSORIES (Low Value) ---
   hdd_ssd: 80,         
   ram: 40,       
   gpu: 150,  
@@ -42,17 +42,18 @@ const basePoints = {
   other: 20            
 };
 
-const conditionMultiplier = {
-  good: 1.2,
-  moderate: 1.0,
-  poor: 0.8
+export const conditionMultiplier = {
+  good: 1.2,      // Reusable (High Eco Value)
+  moderate: 1.0,  // Standard Recycling
+  poor: 0.8       // Scrap Extraction
 };
 
-function calcPointsForItem(item) {
+// Main Calculation Function
+export function calcPointsForItem(item) {
   // Normalize key: 'Desktop PC' -> 'desktop'
   let typeKey = item.category ? item.category.toLowerCase().replace(/\s+/g, '_') : 'other';
   
-  // If the exact key isn't found, default to 'other'
+  // Fallback to 'other' if category not found
   if (!basePoints[typeKey]) typeKey = 'other';
 
   const base = basePoints[typeKey];
@@ -63,10 +64,8 @@ function calcPointsForItem(item) {
   return Math.round(base * mult * qty);
 }
 
-function calculateEstimatedPoints(items = []) {
+export function calculateEstimatedPoints(items = []) {
   let total = 0;
   for (const it of items) total += calcPointsForItem(it);
   return total;
 }
-
-module.exports = { calcPointsForItem, calculateEstimatedPoints, basePoints };

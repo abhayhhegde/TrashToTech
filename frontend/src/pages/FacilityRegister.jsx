@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API from '../api/http'; 
+import { useNavigate } from 'react-router-dom';
 
 const FacilityRegister = () => {
   const [formData, setFormData] = useState({
@@ -31,202 +29,114 @@ const FacilityRegister = () => {
     setError('');
     setSuccess('');
 
+    // 1. Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
     try {
-      // Parse accepted items (comma-separated)
+      // 2. Format Data
       const acceptedItemsArray = formData.acceptedItems
         .split(',')
         .map(item => item.trim())
-        .filter(item => item.length > 0);
-
-      // Parse coordinates
-      const lat = parseFloat(formData.latitude) || 0;
-      const lng = parseFloat(formData.longitude) || 0;
-
+        .filter(Boolean);
+      
       const payload = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         address: formData.address,
         contactInfo: formData.contactInfo,
-        operatingHours: formData.operatingHours,
-        acceptedItems: acceptedItemsArray,
-        coordinates: [lng, lat] // [lng, lat] format
+        operatingHours: formData.operatingHours || '9 AM - 6 PM',
+        acceptedItems: acceptedItemsArray.length > 0 ? acceptedItemsArray : ['All E-Waste'],
+        coordinates: [
+            parseFloat(formData.longitude), 
+            parseFloat(formData.latitude)
+        ]
       };
 
-      const response = await axios.post(`${API_BASE_URL}/facility/register`, payload);
+      // 3. Send to CORRECT Endpoint (Public Registration)
+      // Now: '/facility/register' (Correct - defined in server.js)
+      const response = await API.post('/facility/register', payload);
 
       if (response.status === 201) {
         setSuccess('Facility registered successfully! Redirecting to login...');
-        setTimeout(() => {
-          navigate('/facility/login');
-        }, 2000);
+        setTimeout(() => navigate('/facility/login'), 2000);
       }
     } catch (err) {
-      setError(err?.response?.data?.error || 'Registration failed. Please try again.');
+      console.error(err);
+      const msg = err.response?.data?.error || 'Registration failed. Check your network.';
+      setError(msg);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="max-w-2xl mx-auto bg-gray-800 p-8 rounded mt-20">
-        <h2 className="text-2xl font-bold text-center mb-6">Register Facility</h2>
+    <div className="min-h-screen bg-gray-900 text-white p-8 pt-24">
+      <div className="max-w-2xl mx-auto bg-gray-800 p-8 rounded shadow-xl border border-gray-700">
+        <h2 className="text-3xl font-bold text-center mb-6 text-green-400">Register Partner Facility</h2>
 
-        {error && <p className="text-red-500 text-center mb-4 p-3 bg-red-900 rounded">{error}</p>}
-        {success && <p className="text-green-500 text-center mb-4 p-3 bg-green-900 rounded">{success}</p>}
+        {error && <div className="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded mb-4 text-center">{error}</div>}
+        {success && <div className="bg-green-900/50 border border-green-500 text-green-200 p-3 rounded mb-4 text-center">{success}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Facility Name */}
-            <div className="mb-4">
-              <label className="block text-gray-400 mb-2">Facility Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                placeholder="E-Waste Recycling Center"
-                required
-              />
-            </div>
-
-            {/* Email */}
-            <div className="mb-4">
-              <label className="block text-gray-400 mb-2">Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                placeholder="facility@example.com"
-                required
-              />
-            </div>
-
-            {/* Password */}
-            <div className="mb-4">
-              <label className="block text-gray-400 mb-2">Password *</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                required
-              />
-            </div>
-
-            {/* Confirm Password */}
-            <div className="mb-4">
-              <label className="block text-gray-400 mb-2">Confirm Password *</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="mb-4">
-            <label className="block text-gray-400 mb-2">Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-              placeholder="Full facility address"
-              rows="2"
-            />
-          </div>
-
-          {/* Contact Info */}
-          <div className="mb-4">
-            <label className="block text-gray-400 mb-2">Contact Info</label>
-            <input
-              type="text"
-              name="contactInfo"
-              value={formData.contactInfo}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-              placeholder="Phone number or email"
-            />
-          </div>
-
-          {/* Operating Hours */}
-          <div className="mb-4">
-            <label className="block text-gray-400 mb-2">Operating Hours</label>
-            <input
-              type="text"
-              name="operatingHours"
-              value={formData.operatingHours}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-              placeholder="Mon-Fri: 9:00 AM - 6:00 PM"
-            />
-          </div>
-
-          {/* Accepted Items */}
-          <div className="mb-4">
-            <label className="block text-gray-400 mb-2">Accepted Items (comma-separated)</label>
-            <input
-              type="text"
-              name="acceptedItems"
-              value={formData.acceptedItems}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-              placeholder="Laptops, Smartphones, Tablets, Batteries"
-            />
-          </div>
-
-          {/* Location Coordinates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-gray-400 mb-2">Latitude</label>
-              <input
-                type="number"
-                step="any"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                placeholder="12.9716"
-              />
+              <label className="block text-sm text-gray-400 mb-1">Facility Name *</label>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" required />
             </div>
             <div>
-              <label className="block text-gray-400 mb-2">Longitude</label>
-              <input
-                type="number"
-                step="any"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-700 rounded bg-gray-700 text-white"
-                placeholder="77.5946"
-              />
+              <label className="block text-sm text-gray-400 mb-1">Manager Email *</label>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" required />
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-6">
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-            >
-              Register Facility
-            </button>
-            <Link to="/facility/login" className="text-blue-500 hover:underline">
-              Already have an account? Login
-            </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Password *</label>
+              <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" required />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Confirm Password *</label>
+              <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" required />
+            </div>
           </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Full Address *</label>
+            <textarea name="address" value={formData.address} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" rows="2" required />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div>
+               <label className="block text-sm text-gray-400 mb-1">Latitude (e.g. 12.97) *</label>
+               <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" placeholder="12.9716" required />
+             </div>
+             <div>
+               <label className="block text-sm text-gray-400 mb-1">Longitude (e.g. 77.59) *</label>
+               <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" placeholder="77.5946" required />
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm text-gray-400 mb-1">Operating Hours</label>
+                <input type="text" name="operatingHours" value={formData.operatingHours} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" placeholder="Mon-Sat: 10AM - 7PM" />
+            </div>
+            <div>
+                <label className="block text-sm text-gray-400 mb-1">Contact Phone</label>
+                <input type="text" name="contactInfo" value={formData.contactInfo} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" placeholder="080-12345678" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Accepted Items (comma separated)</label>
+            <input type="text" name="acceptedItems" value={formData.acceptedItems} onChange={handleChange} className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-green-500 outline-none" placeholder="Laptops, Mobiles, Batteries..." />
+          </div>
+
+          <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded mt-6 transition shadow-lg">
+            Register Facility
+          </button>
         </form>
       </div>
     </div>
